@@ -34,6 +34,7 @@ export function emptyState(): AppState {
     recipes: [],
     shoppingLines: [],
     targetPortions: {},
+    suppressedAggKeys: [],
   };
 }
 
@@ -98,10 +99,12 @@ async function pruneSnapshots(hist: string): Promise<void> {
 }
 
 export function recomputeShopping(state: AppState): AppState {
+  const suppressed = new Set(state.suppressedAggKeys ?? []);
   const lines = rebuildShoppingLines(
     state.recipes,
     state.targetPortions,
-    state.shoppingLines
+    state.shoppingLines,
+    suppressed
   );
   return { ...state, shoppingLines: lines };
 }

@@ -19,5 +19,6 @@ export function mergeServerWithLocalDraft(
     ...server,
     shoppingLines: local.shoppingLines,
     targetPortions: { ...server.targetPortions, ...local.targetPortions },
+    suppressedAggKeys: local.suppressedAggKeys ?? server.suppressedAggKeys,
   };
 }

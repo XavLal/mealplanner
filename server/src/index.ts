@@ -153,6 +153,7 @@ app.post("/api/clear-recipes", async (req, reply) => {
     ...prev,
     recipes: [],
     targetPortions: {},
+    suppressedAggKeys: [],
     updatedAt: new Date().toISOString(),
   };
   const next = recomputeShopping(nextRaw);
@@ -179,6 +180,7 @@ app.post("/api/clear-shopping", async (req, reply) => {
   const nextRaw: AppState = {
     ...prev,
     shoppingLines: [],
+    suppressedAggKeys: [],
     updatedAt: new Date().toISOString(),
   };
   const next = recomputeShopping(nextRaw);

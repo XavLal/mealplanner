@@ -6,6 +6,7 @@ import {
   compareAisles,
   SHOP_AISLES,
 } from "@/lib/shopAisles";
+import { ingredientMergeKey } from "@/lib/ingredientMergeKey";
 import { SHOP_UNITS, unitForSelect } from "@/lib/shopUnits";
 import type { ShoppingLine } from "@/types";
 
@@ -78,9 +79,14 @@ export default function ShoppingPage() {
   }
 
   async function removeLine(id: string) {
-    const line = state?.shoppingLines.find((x) => x.id === id);
-    if (!line?.checked) return;
     await commit((d) => {
+      const line = d.shoppingLines.find((x) => x.id === id);
+      if (!line) return;
+      if (!line.manual) {
+        const key = ingredientMergeKey(line.aisle, line.unit, line.name);
+        const cur = d.suppressedAggKeys ?? [];
+        if (!cur.includes(key)) d.suppressedAggKeys = [...cur, key];
+      }
       d.shoppingLines = d.shoppingLines.filter((x) => x.id !== id);
     });
   }
@@ -263,8 +269,7 @@ export default function ShoppingPage() {
                 <button
                   type="button"
                   className="btn ghost danger"
-                  disabled={!l.checked}
-                  title={l.checked ? "Retirer" : "Cochez d’abord"}
+                  title="Retirer de la liste"
                   onClick={() => void removeLine(l.id)}
                 >
                   Retirer
@@ -277,8 +282,8 @@ export default function ShoppingPage() {
 
       <footer className="page-footer">
         <p className="muted small">
-          Vide la liste puis la régénère à partir des recettes encore au plan (y compris coches et
-          lignes manuelles).
+          Vide la liste et réinitialise les exclusions ; tout est recalculé à partir des recettes au
+          plan (lignes manuelles incluses).
         </p>
         <button
           type="button"
@@ -312,8 +317,8 @@ export default function ShoppingPage() {
           <div className="card modal" onClick={(e) => e.stopPropagation()}>
             <h2 id="clear-shopping-title">Vider toute la liste ?</h2>
             <p className="muted">
-              Toutes les lignes (manuelles, hors recette, coches ou non) seront effacées, puis la
-              liste sera recalculée à partir des recettes actuellement au plan.
+              Toutes les lignes seront effacées et les ingrédients volontairement retirés seront à
+              nouveau proposés ; la liste sera recalculée à partir des recettes au plan.
             </p>
             <div className="row end">
               <button

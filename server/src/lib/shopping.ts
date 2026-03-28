@@ -14,6 +14,15 @@ function mergeKey(aisle: string, unit: string, name: string): string {
   return `${aisle}||${unit}||${normalizeName(name)}`;
 }
 
+/** Même clé que pour l’agrégation / la liste `suppressedAggKeys`. */
+export function ingredientMergeKey(
+  aisle: string,
+  unit: string,
+  name: string
+): string {
+  return mergeKey(aisle, unit, name);
+}
+
 export function aggLineId(aisle: string, unit: string, name: string): string {
   const mk = mergeKey(aisle, unit, name);
   return `agg:${Buffer.from(mk).toString("base64url")}`;
@@ -31,7 +40,8 @@ function roundDisplay(quantity: number, unit: string): number {
 export function rebuildShoppingLines(
   recipes: StoredRecipe[],
   targetPortions: Record<string, number>,
-  previous: ShoppingLine[]
+  previous: ShoppingLine[],
+  suppressedKeys: Set<string> = new Set()
 ): ShoppingLine[] {
   const prevById = new Map(previous.map((l) => [l.id, l]));
   const bucket = new Map<
@@ -62,7 +72,8 @@ export function rebuildShoppingLines(
   const manual = previous.filter((l) => l.manual);
   const aggregated: ShoppingLine[] = [];
 
-  for (const [, v] of bucket) {
+  for (const [key, v] of bucket) {
+    if (suppressedKeys.has(key)) continue;
     const id = aggLineId(v.aisle, v.unit, v.name);
     const prev = prevById.get(id);
     aggregated.push({
