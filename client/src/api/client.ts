@@ -107,6 +107,25 @@ export async function apiClearRecipes(
   return { ok: true, state: data as AppState };
 }
 
+export type RecipeUrlCheckResult =
+  | { determined: true; status: number }
+  | { determined: false };
+
+export async function apiCheckRecipeUrl(
+  url: string
+): Promise<RecipeUrlCheckResult> {
+  const res = await apiFetch("/api/recipe-url-check", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+  const data = (await res.json()) as RecipeUrlCheckResult & { error?: string };
+  if (!res.ok) throw new Error(data.error ?? "Vérification d’URL impossible");
+  if (data.determined === true && typeof data.status === "number") {
+    return { determined: true, status: data.status };
+  }
+  return { determined: false };
+}
+
 export async function apiClearShopping(
   expectedVersion: number
 ): Promise<PutStateResult> {

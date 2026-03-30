@@ -8,6 +8,10 @@ import { fileURLToPath } from "url";
 import { randomUUID } from "node:crypto";
 import { importPayloadSchema } from "./lib/schemas.js";
 import { tenantSlugFromLogin } from "./lib/slug.js";
+import {
+  isAllowlistedRecipeUrl,
+  probeRecipeUrlHttpStatus,
+} from "./lib/recipeUrlCheck.js";
 import { loadAccounts, loadState, saveState } from "./lib/storage.js";
 import { mergeImportedRecipesIntoShoppingLines } from "./lib/shopping.js";
 import {
@@ -176,6 +180,24 @@ app.post("/api/clear-shopping", async (req, reply) => {
   };
   await saveState(auth.sub, next);
   return next;
+});
+
+app.post("/api/recipe-url-check", async (req, reply) => {
+  const auth = parseAuth(req, reply);
+  if (!auth) return;
+  const body = req.body as { url?: string };
+  const raw = typeof body.url === "string" ? body.url.trim() : "";
+  if (!raw) {
+    return reply.status(400).send({ error: "Paramètre url requis." });
+  }
+  if (!isAllowlistedRecipeUrl(raw)) {
+    return { determined: false as const };
+  }
+  const status = await probeRecipeUrlHttpStatus(raw);
+  if (status === null) {
+    return { determined: false as const };
+  }
+  return { determined: true as const, status };
 });
 
 app.post("/api/import", async (req, reply) => {

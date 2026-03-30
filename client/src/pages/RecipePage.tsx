@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import RecipeSourceLink from "@/components/RecipeSourceLink";
 import { scaledForRecipe } from "@/lib/quantities";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -74,14 +75,12 @@ export default function RecipePage() {
         <h1>{recipe.title}</h1>
         <p className="muted">
           {recipe.source}
-          {recipe.url ? (
-            <>
-              {" · "}
-              <a href={recipe.url} target="_blank" rel="noreferrer">
-                Voir la source
-              </a>
-            </>
-          ) : null}
+          <RecipeSourceLink
+            key={recipe.recipeInstanceId}
+            title={recipe.title}
+            source={recipe.source}
+            url={recipe.url}
+          />
         </p>
         <div className="row wrap">
           <label className="field inline">
