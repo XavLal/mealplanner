@@ -18,7 +18,7 @@ let dbPromise: Promise<IDBPDatabase<MealPlannerDB>> | null = null;
 
 function open(): Promise<IDBPDatabase<MealPlannerDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<MealPlannerDB>("mealplanner-offline", 1, {
+    dbPromise = openDB<MealPlannerDB>("preppr-offline", 1, {
       upgrade(db) {
         db.createObjectStore("kv");
       },

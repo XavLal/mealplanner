@@ -40,11 +40,11 @@ export default function AppLayout() {
     <div className="shell">
       <header className="topbar">
         <NavLink to="/" className="brand">
-          Meal planner
+          Preppr
         </NavLink>
         <nav className="nav">
           <NavLink to="/" end>
-            Accueil
+            Recettes
           </NavLink>
           <NavLink to="/courses">Courses</NavLink>
           {!online ? (

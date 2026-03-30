@@ -68,7 +68,7 @@ export default function RecipePage() {
   return (
     <div>
       <p className="breadcrumb">
-        <Link to="/">← Accueil</Link>
+        <Link to="/">← Recettes</Link>
       </p>
       <header className="recipe-header">
         <h1>{recipe.title}</h1>

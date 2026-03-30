@@ -11,10 +11,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["vite.svg"],
+      includeAssets: ["logo.svg"],
       manifest: {
-        name: "Meal planner",
-        short_name: "Meals",
+        name: "Preppr",
+        short_name: "Preppr",
         description: "Planification des repas et liste de courses",
         start_url: "/",
         display: "standalone",
@@ -23,7 +23,7 @@ export default defineConfig({
         lang: "fr",
         icons: [
           {
-            src: "/vite.svg",
+            src: "/logo.svg",
             sizes: "any",
             type: "image/svg+xml",
             purpose: "any",

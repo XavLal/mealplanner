@@ -1,4 +1,4 @@
-# Meal planner — règles pour l’agent
+# Preppr — règles pour l’agent
 ## Contexte produit
 - App familiale : import JSON (IA), recettes avec `recipeInstanceId` interne, liste de courses par rayon, sync multi-utilisateurs, **liste de courses utilisable hors ligne** (cache + file de mutations).
 - Garde-fous UX : suppression recette **après** « déjà fait » ; retrait d’une ligne de courses **après** cochage ; valider côté serveur aussi.

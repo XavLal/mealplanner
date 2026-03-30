@@ -1,4 +1,4 @@
-const KEY = "mealplanner_token";
+const KEY = "preppr_token";
 
 export function setAuthToken(token: string, remember: boolean): void {
   if (remember) {

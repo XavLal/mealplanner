@@ -29,7 +29,7 @@ export default function LoginPage() {
   return (
     <div className="auth-wrap">
       <form className="card auth-card" onSubmit={onSubmit}>
-        <h1>Meal planner</h1>
+        <h1>Preppr</h1>
         <p className="muted">Connexion famille</p>
         <label className="field">
           <span>Identifiant</span>

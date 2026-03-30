@@ -25,8 +25,10 @@ export default function DashboardPage() {
 
   const active = state?.recipes.filter((r) => !r.removedFromPlan) ?? [];
   const toCook = active.filter((r) => !r.alreadyCooked).length;
+  const cooked = active.filter((r) => r.alreadyCooked).length;
   const toBuy =
     state?.shoppingLines.filter((l) => !l.checked).length ?? 0;
+  const bought = state?.shoppingLines.filter((l) => l.checked).length ?? 0;
 
   async function onImport(e: React.FormEvent) {
     e.preventDefault();
@@ -82,14 +84,22 @@ export default function DashboardPage() {
           <span className="stat-value">{toCook}</span>
         </div>
         <div className="stat">
+          <span className="stat-label">Déjà cuisiné</span>
+          <span className="stat-value">{cooked}</span>
+        </div>
+        <div className="stat">
           <span className="stat-label">À acheter</span>
           <span className="stat-value">{toBuy}</span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Déjà acheté</span>
+          <span className="stat-value">{bought}</span>
         </div>
       </div>
 
       <div className="toolbar">
         <button type="button" className="btn primary" onClick={() => setImportOpen(true)}>
-          Importer du JSON
+          + Ajouter
         </button>
       </div>
 

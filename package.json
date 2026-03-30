@@ -1,5 +1,5 @@
 {
-  "name": "mealplanner",
+  "name": "preppr",
   "private": true,
   "workspaces": ["client", "server"],
   "scripts": {

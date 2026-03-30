@@ -118,6 +118,11 @@ export default function ShoppingPage() {
   }
 
   function onDragStartLine(e: DragEvent, lineId: string) {
+    const line = state?.shoppingLines.find((x) => x.id === lineId);
+    if (line?.checked) {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.setData("text/plain", lineId);
     e.dataTransfer.effectAllowed = "move";
     setDraggingLineId(lineId);
@@ -336,20 +341,30 @@ export default function ShoppingPage() {
                 <div className="shop-line-main">
                   <span
                     className="shop-drag-handle"
-                    draggable
+                    draggable={!l.checked}
                     title="Glisser pour réordonner dans ce rayon"
                     aria-label={`Réordonner ${l.name}`}
                     onDragStart={(e) => onDragStartLine(e, l.id)}
                     onDragEnd={() => setDraggingLineId(null)}
-                    onClick={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     ⋮⋮
                   </span>
-                  <label className="check shop-line-check">
+                  <label
+                    className="check shop-line-check"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={l.checked}
                       onChange={(e) => void toggleLine(l.id, e.target.checked)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </label>
                   <button
@@ -372,30 +387,32 @@ export default function ShoppingPage() {
                   </button>
                 </div>
                 <div className="shop-line-actions">
-                  <div
-                    className="shop-reorder-btns"
-                    role="group"
-                    aria-label={`Position dans ${aisleName}`}
-                  >
-                    <button
-                      type="button"
-                      className="btn icon ghost"
-                      disabled={idx === 0}
-                      aria-label={`Monter ${l.name}`}
-                      onClick={() => void moveInAisle(aisleName, l.id, -1)}
+                  {!l.checked ? (
+                    <div
+                      className="shop-reorder-btns"
+                      role="group"
+                      aria-label={`Position dans ${aisleName}`}
                     >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="btn icon ghost"
-                      disabled={idx === lines.length - 1}
-                      aria-label={`Descendre ${l.name}`}
-                      onClick={() => void moveInAisle(aisleName, l.id, 1)}
-                    >
-                      ↓
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        className="btn icon ghost"
+                        disabled={idx === 0}
+                        aria-label={`Monter ${l.name}`}
+                        onClick={() => void moveInAisle(aisleName, l.id, -1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="btn icon ghost"
+                        disabled={idx === lines.length - 1}
+                        aria-label={`Descendre ${l.name}`}
+                        onClick={() => void moveInAisle(aisleName, l.id, 1)}
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     className="btn ghost danger"

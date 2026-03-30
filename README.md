@@ -1,4 +1,4 @@
-# Meal planner
+# Preppr
 
 Application familiale : import de recettes au format JSON (généré par l’IA), planification, liste de courses par rayon, synchronisation via API (polling), comptes par famille (login / mot de passe).
 
@@ -68,7 +68,7 @@ export JWT_SECRET=$(openssl rand -hex 32)
 docker compose up --build
 ```
 
-Données dans le volume `mealplanner-data` monté sur `/data`.
+Données dans le volume `preppr-data` monté sur `/data`.
 
 ## Hors ligne & PWA
 

@@ -1,5 +1,5 @@
 ---
-name: Meal planner recettes
+name: Preppr recettes
 overview: JSON IA + React ; auth simple login/mot de passe par famille, « se souvenir de moi », plusieurs appareils même compte ; données isolées par tenant ; backend JSON + snapshots ; offline liste + sync ; garde-fous suppression.
 todos:
   - id: auth-tenants
@@ -213,7 +213,7 @@ Inchangé : `scale = portionsCible / portionsRéférence`, arrondis par unité, 
 
 **Oui** — la stack prévue est **adaptée** à un hébergement type **TrueNAS**, surtout **TrueNAS SCALE** (Linux + **Docker** / apps « Custom App »).
 
-- **Modèle** : une image (ou `docker-compose`) qui exécute **un seul processus Node** servant à la fois l’**API** et les fichiers **statiques** du build Vite (ou deux services : `nginx` + `api`, derrière un reverse proxy). Cela évite la complexité CORS si tout est servi sous **le même origine** (`https://mealplanner.mondomaine.local`).
+- **Modèle** : une image (ou `docker-compose`) qui exécute **un seul processus Node** servant à la fois l’**API** et les fichiers **statiques** du build Vite (ou deux services : `nginx` + `api`, derrière un reverse proxy). Cela évite la complexité CORS si tout est servi sous **le même origine** (`https://preppr.mondomaine.local`).
 - **Données persistantes** : monter un **dataset TrueNAS** sur `**/app/data`** (racine `accounts.json` + `tenants/{slug}/…`) pour que toutes les familles et l’historique soient sauvegardés avec le NAS.
 - **Réseau** : exposer le port du conteneur ou passer par le **reverse proxy intégré** (Traefik / Nginx Proxy Manager sur SCALE) pour **HTTPS** ; utile pour l’accès depuis les téléphones et pour certaines fonctionnalités **PWA** (souvent **HTTPS requis** hors `localhost`).
 - **TrueNAS CORE** : pas de Docker natif ; déploiement possible via jail ou VM, mais **SCALE** est le scénario le plus direct pour un `Docker Compose` documenté dans le repo.
