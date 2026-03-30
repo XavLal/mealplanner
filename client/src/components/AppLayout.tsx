@@ -47,6 +47,8 @@ export default function AppLayout() {
             Recettes
           </NavLink>
           <NavLink to="/courses">Courses</NavLink>
+          <NavLink to="/parametres">Paramètres</NavLink>
+          <NavLink to="/generateur-menus">Générateur de menus</NavLink>
           {!online ? (
             <span className="offline-badge" title="Pas de connexion réseau">
               Hors ligne
