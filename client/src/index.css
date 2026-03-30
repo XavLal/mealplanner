@@ -3,6 +3,8 @@
   line-height: 1.5;
   color: #14201f;
   background: #f4f7f6;
+  --background: #f4f7f6;
+  --foreground: #14201f;
   --accent: #0d8065;
   --accent-dark: #095848;
   --danger: #b42318;
@@ -117,7 +119,7 @@ h2 {
 .page-footer {
   margin-top: 2.5rem;
   padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
+  border-top: none;
 }
 
 .page-footer p {
@@ -185,6 +187,11 @@ h2 {
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
+}
+.field textarea {
+  width: 100%;
+  max-width: 100%;
+  resize: vertical;
 }
 
 .field.inline {
@@ -657,9 +664,21 @@ h2 {
   justify-content: center;
 }
 
+.mobile-only {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .stats {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .import-header-btn {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
   }
 
   .recipe-split {
@@ -688,5 +707,11 @@ h2 {
     margin: 0;
     max-height: min(92vh, calc(100dvh - env(safe-area-inset-top, 0px) - 1.25rem));
     border-radius: 0 0 14px 14px;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .modal-backdrop .card.modal textarea {
+    max-height: 42vh;
+    overflow: auto;
   }
 }

@@ -1,5 +1,6 @@
-import { type DragEvent, type FormEvent, useEffect, useMemo, useState } from "react";
+import { type DragEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { Separator } from "@/components/ui/separator";
 import {
   moveLineStepInAisle,
   moveLineWithinAisle,
@@ -36,8 +37,27 @@ export default function ShoppingPage() {
   const [clearShoppingOpen, setClearShoppingOpen] = useState(false);
   const [clearShoppingBusy, setClearShoppingBusy] = useState(false);
   const [draggingLineId, setDraggingLineId] = useState<string | null>(null);
+  const dragGhostElRef = useRef<HTMLDivElement | null>(null);
   /** Rayon imposé (bouton + à côté du titre de rayon) : le select est masqué. */
   const [lockAisleInForm, setLockAisleInForm] = useState(false);
+
+  function cleanupDragGhost() {
+    const el = dragGhostElRef.current;
+    if (el) {
+      el.remove();
+      dragGhostElRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    // Firefox peut ne pas déclencher `drop` comme attendu. On force le "reset" via `dragend`.
+    const onAnyDragEnd = () => {
+      setDraggingLineId(null);
+      cleanupDragGhost();
+    };
+    window.addEventListener("dragend", onAnyDragEnd);
+    return () => window.removeEventListener("dragend", onAnyDragEnd);
+  }, []);
 
   const grouped = useMemo(() => {
     const lines = state?.shoppingLines ?? [];
@@ -123,8 +143,22 @@ export default function ShoppingPage() {
       e.preventDefault();
       return;
     }
+
+    // Firefox est parfois capricieux sur `getData()` : on met plusieurs types.
     e.dataTransfer.setData("text/plain", lineId);
+    e.dataTransfer.setData("application/x-preppr-shopping-line-id", lineId);
     e.dataTransfer.effectAllowed = "move";
+    // Évite les effets “ghost” bizarres (Firefox) en contrôlant l’image de drag.
+    const ghost = document.createElement("div");
+    ghost.style.width = "1px";
+    ghost.style.height = "1px";
+    ghost.style.position = "absolute";
+    ghost.style.top = "-9999px";
+    ghost.style.left = "-9999px";
+    document.body.appendChild(ghost);
+    dragGhostElRef.current = ghost;
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+
     setDraggingLineId(lineId);
   }
 
@@ -134,8 +168,12 @@ export default function ShoppingPage() {
     targetLineId: string
   ) {
     e.preventDefault();
-    const fromId = e.dataTransfer.getData("text/plain");
+
+    const fromId =
+      e.dataTransfer.getData("application/x-preppr-shopping-line-id") ||
+      e.dataTransfer.getData("text/plain");
     setDraggingLineId(null);
+    cleanupDragGhost();
     const cur = state?.shoppingLines;
     if (!fromId || !cur) return;
     const fromLine = cur.find((x) => x.id === fromId);
@@ -211,7 +249,7 @@ export default function ShoppingPage() {
         </button>
       </div>
       <p className="muted small shop-reorder-hint">
-        Dans un même rayon : poignée ⋮⋮ pour glisser-déposer, ou flèches pour déplacer d’une ligne.
+        Dans un même rayon : poignée ⋮ pour glisser-déposer, ou flèches pour déplacer d’une ligne.
       </p>
 
       {modalOpen ? (
@@ -345,14 +383,17 @@ export default function ShoppingPage() {
                     title="Glisser pour réordonner dans ce rayon"
                     aria-label={`Réordonner ${l.name}`}
                     onDragStart={(e) => onDragStartLine(e, l.id)}
-                    onDragEnd={() => setDraggingLineId(null)}
+                    onDragEnd={() => {
+                      setDraggingLineId(null);
+                      cleanupDragGhost();
+                    }}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
-                    ⋮⋮
+                    ⋮
                   </span>
                   <label
                     className="check shop-line-check"
@@ -430,6 +471,7 @@ export default function ShoppingPage() {
       ))}
 
       <footer className="page-footer">
+        <Separator className="mb-[1.25rem]" />
         <p className="muted small">
           Supprime toutes les lignes de la liste. Les recettes et leurs ingrédients ne sont pas
           modifiés.

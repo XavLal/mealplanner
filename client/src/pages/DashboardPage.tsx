@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { Separator } from "@/components/ui/separator";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -13,7 +14,6 @@ export default function DashboardPage() {
   const commit = useAppStore((s) => s.commit);
   const clearAllRecipes = useAppStore((s) => s.clearAllRecipes);
   const online = useOnlineStatus();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importBusy, setImportBusy] = useState(false);
@@ -24,25 +24,12 @@ export default function DashboardPage() {
     void hydrate();
   }, [hydrate]);
 
-  const importRequested = searchParams.get("import") === "1";
-  useEffect(() => {
-    setImportOpen(importRequested);
-  }, [importRequested]);
-
   const active = state?.recipes.filter((r) => !r.removedFromPlan) ?? [];
   const toCook = active.filter((r) => !r.alreadyCooked).length;
   const cooked = active.filter((r) => r.alreadyCooked).length;
   const toBuy =
     state?.shoppingLines.filter((l) => !l.checked).length ?? 0;
   const bought = state?.shoppingLines.filter((l) => l.checked).length ?? 0;
-
-  function clearImportParam() {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("import");
-      return next;
-    });
-  }
 
   async function onImport(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +39,6 @@ export default function DashboardPage() {
     if (ok) {
       setImportOpen(false);
       setImportText("");
-      clearImportParam();
     }
   }
 
@@ -150,6 +136,19 @@ export default function DashboardPage() {
       </ul>
 
       <footer className="page-footer">
+        <Separator className="mb-[1.25rem]" />
+        <p className="muted small">
+          Importez des recettes depuis un JSON (IA). Les recettes sont ajoutées au plan et la liste
+          de courses est recalculée ; les lignes manuelles restent.
+        </p>
+        <button
+          type="button"
+          className="btn primary mb-[1rem]"
+          onClick={() => setImportOpen(true)}
+        >
+          + Ajouter
+        </button>
+        <Separator className="mb-[1.25rem]" />
         <p className="muted small">
           Retire toutes les recettes du plan. La liste de courses est recalculée ; les lignes ajoutées
           manuellement y restent.
@@ -231,7 +230,7 @@ export default function DashboardPage() {
                   className="btn ghost"
                   onClick={() => {
                     setImportOpen(false);
-                    clearImportParam();
+                    setImportText("");
                   }}
                 >
                   Annuler

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { clearAuthToken } from "@/lib/authToken";
 import { clearAppCache } from "@/lib/offlineDb";
 import { getTenantCacheKey } from "@/lib/tenantCacheKey";
@@ -9,7 +9,6 @@ import { useAppStore } from "@/store/useAppStore";
 
 export default function AppLayout() {
   const nav = useNavigate();
-  const location = useLocation();
   const online = useOnlineStatus();
   const pendingSync = useAppStore((s) => s.pendingSync);
   const flushPendingSync = useAppStore((s) => s.flushPendingSync);
@@ -37,12 +36,6 @@ export default function AppLayout() {
     nav("/login", { replace: true });
   }
 
-  function openImportModal() {
-    const params = new URLSearchParams(location.search);
-    params.set("import", "1");
-    nav({ pathname: "/", search: params.toString() });
-  }
-
   return (
     <div className="shell">
       <header className="topbar">
@@ -54,11 +47,6 @@ export default function AppLayout() {
             Recettes
           </NavLink>
           <NavLink to="/courses">Courses</NavLink>
-          {location.pathname === "/" ? (
-            <button type="button" className="btn primary bigbutton" onClick={openImportModal}>
-              +
-            </button>
-          ) : null}
           {!online ? (
             <span className="offline-badge" title="Pas de connexion réseau">
               Hors ligne
