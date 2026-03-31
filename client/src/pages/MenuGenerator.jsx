@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 import {
   DEFAULT_ROLE_CONTEXT,
   DEFAULT_CULINARY_STYLE_CONTEXT,
@@ -169,7 +170,10 @@ export default function MenuGenerator() {
     if (!state) void hydrate();
   }, [hydrate, state]);
 
+  const activeLlm = state?.activeLlm ?? "gemini";
   const apiKey = state?.geminiApiKey ?? "";
+  const claudeApiKey = state?.claudeApiKey ?? "";
+  const activeApiKey = activeLlm === "claude" ? claudeApiKey : apiKey;
 
   const customUserContext = useMemo(() => {
     return buildCustomUserContextText({
@@ -250,43 +254,84 @@ export default function MenuGenerator() {
 
     const finalSystemPrompt = customUserContext + "\n\n" + FIXED_JSON_RULES;
 
-    if (!apiKey.trim()) {
-      addMessage("model", "Clé API Gemini manquante. Ajoute-la dans Paramètres.");
+    if (!activeApiKey.trim()) {
+      const llmLabel = activeLlm === "claude" ? "Claude (Anthropic)" : "Gemini (Google)";
+      addMessage("model", `Clé API ${llmLabel} manquante. Ajoute-la dans Paramètres.`);
       setIsLoading(false);
       return;
     }
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey.trim());
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
-        tools: [
-          {
-            googleSearch: {},
-          },
-        ],
-        systemInstruction: finalSystemPrompt,
-      });
+      let answer = "";
 
-      const historyContents = messages.map((msg) => ({
-        role: msg.role,
-        parts: [{ text: msg.content }],
-      }));
-      const userParts = [];
-      if (text) userParts.push({ text });
-      if (selectedFile) {
-        const imagePart = await fileToGenerativePart(selectedFile);
-        userParts.push(imagePart);
+      if (activeLlm === "claude") {
+        const anthropic = new Anthropic({
+          apiKey: claudeApiKey.trim(),
+          dangerouslyAllowBrowser: true,
+        });
+
+        const claudeHistory = messages.map((msg) => ({
+          role: msg.role === "model" ? "assistant" : "user",
+          content: msg.content,
+        }));
+
+        const userContent = [];
+        if (text) userContent.push({ type: "text", text });
+        if (selectedFile) {
+          const imagePart = await fileToGenerativePart(selectedFile);
+          userContent.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: selectedFile.type || "image/jpeg",
+              data: imagePart.inlineData.data,
+            },
+          });
+        }
+        if (userContent.length === 0) userContent.push({ type: "text", text: " " });
+
+        const response = await anthropic.messages.create({
+          model: "claude-3-5-sonnet-latest",
+          max_tokens: 8192,
+          system: finalSystemPrompt,
+          messages: [
+            ...claudeHistory,
+            { role: "user", content: userContent },
+            { role: "assistant", content: "{" },
+          ],
+        });
+
+        const rawText =
+          response.content[0]?.type === "text" ? response.content[0].text : "";
+        answer = ("{" + rawText).trim();
+      } else {
+        const genAI = new GoogleGenerativeAI(apiKey.trim());
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+          tools: [{ googleSearch: {} }],
+          systemInstruction: finalSystemPrompt,
+        });
+
+        const historyContents = messages.map((msg) => ({
+          role: msg.role,
+          parts: [{ text: msg.content }],
+        }));
+        const userParts = [];
+        if (text) userParts.push({ text });
+        if (selectedFile) {
+          const imagePart = await fileToGenerativePart(selectedFile);
+          userParts.push(imagePart);
+        }
+        if (userParts.length === 0) userParts.push({ text: " " });
+
+        const result = await model.generateContent({
+          contents: [...historyContents, { role: "user", parts: userParts }],
+        });
+
+        answer =
+          result.response.text()?.trim() ||
+          "Je n'ai pas reçu de réponse exploitable de Gemini.";
       }
-      if (userParts.length === 0) userParts.push({ text: " " });
-
-      const result = await model.generateContent({
-        contents: [...historyContents, { role: "user", parts: userParts }],
-      });
-
-      const answer =
-        result.response.text()?.trim() ||
-        "Je n'ai pas recu de reponse exploitable de Gemini.";
 
       const jsonPayload = extractJsonPayload(answer);
       if (!jsonPayload) {
@@ -325,11 +370,12 @@ export default function MenuGenerator() {
         );
       }
     } catch (error) {
+      const llmLabel = activeLlm === "claude" ? "Claude" : "Gemini";
       const message =
-        error instanceof Error ? error.message : "Erreur inconnue pendant l'appel Gemini.";
+        error instanceof Error ? error.message : `Erreur inconnue pendant l'appel ${llmLabel}.`;
       addMessage(
         "model",
-        `Impossible de contacter Gemini pour le moment. Detail: ${message}`
+        `Impossible de contacter ${llmLabel} pour le moment. Détail : ${message}`
       );
     } finally {
       setIsLoading(false);
@@ -338,9 +384,45 @@ export default function MenuGenerator() {
     }
   }
 
+  const llmBadge =
+    activeLlm === "claude"
+      ? { label: "Propulsé par Claude 🧠", color: "#f0e6ff", border: "#d8b4fe", text: "#5b21b6" }
+      : { label: "Propulsé par Gemini ⚡️", color: "#e8f5f1", border: "#cfeee4", text: "#0d5e4a" };
+
   return (
     <div className="menu-generator">
-      <h1>Générateur de Menus</h1>
+      <div className="row" style={{ alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
+        <h1 style={{ margin: 0 }}>Générateur de Menus</h1>
+        <span
+          style={{
+            background: llmBadge.color,
+            border: `1px solid ${llmBadge.border}`,
+            color: llmBadge.text,
+            borderRadius: 20,
+            padding: "0.2rem 0.7rem",
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {llmBadge.label}
+        </span>
+      </div>
+      {!activeApiKey.trim() ? (
+        <p
+          className="banner"
+          role="alert"
+          style={{
+            background: "#fff8e1",
+            border: "1px solid #ffe082",
+            color: "#7b5c00",
+            marginBottom: "0.75rem",
+          }}
+        >
+          Aucune clé API {activeLlm === "claude" ? "Claude (Anthropic)" : "Gemini (Google)"} configurée.{" "}
+          <a href="/settings">Configurez-la dans les Paramètres.</a>
+        </p>
+      ) : null}
       {importStatus ? (
         <p
           className="banner"
@@ -415,7 +497,9 @@ export default function MenuGenerator() {
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <div className="row" style={{ justifyContent: "space-between" }}>
             <div className="muted small">
-              {apiKey ? "Clé API détectée." : "Ajoute une clé API pour activer la génération."}
+              {activeApiKey
+                ? `Clé API ${activeLlm === "claude" ? "Claude" : "Gemini"} détectée.`
+                : "Ajoute une clé API pour activer la génération."}
             </div>
             <div className="row" style={{ gap: "0.5rem" }}>
               <button

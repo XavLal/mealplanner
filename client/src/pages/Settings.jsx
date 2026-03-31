@@ -15,6 +15,8 @@ export default function Settings() {
   const commit = useAppStore((s) => s.commit);
 
   const [apiKey, setApiKey] = useState("");
+  const [claudeApiKey, setClaudeApiKey] = useState("");
+  const [activeLlm, setActiveLlm] = useState("gemini");
   const [savedMessage, setSavedMessage] = useState(null);
   const [busy, setBusy] = useState(false);
   const [formHydrated, setFormHydrated] = useState(false);
@@ -38,6 +40,8 @@ export default function Settings() {
     if (lastPushedVersionRef.current === state.version) return;
     lastPushedVersionRef.current = state.version;
     setApiKey(state.geminiApiKey);
+    setClaudeApiKey(state.claudeApiKey);
+    setActiveLlm(state.activeLlm ?? "gemini");
     setFamilyContext(state.familyContext);
     setTastesContext(state.tastesContext);
     setCulinaryStyleContext(state.culinaryStyleContext);
@@ -50,6 +54,8 @@ export default function Settings() {
     if (!formHydrated || !state) return;
     const matches =
       apiKey === state.geminiApiKey &&
+      claudeApiKey === state.claudeApiKey &&
+      activeLlm === (state.activeLlm ?? "gemini") &&
       familyContext === state.familyContext &&
       tastesContext === state.tastesContext &&
       culinaryStyleContext === state.culinaryStyleContext &&
@@ -62,6 +68,8 @@ export default function Settings() {
       void (async () => {
         const ok = await commit((d) => {
           d.geminiApiKey = apiKey;
+          d.claudeApiKey = claudeApiKey;
+          d.activeLlm = activeLlm;
           d.familyContext = familyContext;
           d.tastesContext = tastesContext;
           d.culinaryStyleContext = culinaryStyleContext;
@@ -82,6 +90,8 @@ export default function Settings() {
   }, [
     formHydrated,
     apiKey,
+    claudeApiKey,
+    activeLlm,
     familyContext,
     tastesContext,
     culinaryStyleContext,
@@ -121,6 +131,8 @@ export default function Settings() {
 
   async function resetPromptsToDefaults() {
     setApiKey("");
+    setClaudeApiKey("");
+    setActiveLlm("gemini");
     setFamilyContext(DEFAULT_FAMILY_CONTEXT);
     setTastesContext(DEFAULT_TASTES_CONTEXT);
     setCulinaryStyleContext(DEFAULT_CULINARY_STYLE_CONTEXT);
@@ -128,6 +140,8 @@ export default function Settings() {
     setInteractionContext(DEFAULT_INTERACTION_CONTEXT);
     const ok = await commit((d) => {
       d.geminiApiKey = "";
+      d.claudeApiKey = "";
+      d.activeLlm = "gemini";
       d.familyContext = DEFAULT_FAMILY_CONTEXT;
       d.tastesContext = DEFAULT_TASTES_CONTEXT;
       d.culinaryStyleContext = DEFAULT_CULINARY_STYLE_CONTEXT;
@@ -145,27 +159,64 @@ export default function Settings() {
       <h1>Paramètres</h1>
 
       <section className="card">
-        <h2>Clé API Gemini</h2>
+        <h2>Modèle d'IA</h2>
         <p className="muted small">
-          Pour activer le Générateur de Menus, crée une clé API dans Google AI Studio. Le forfait gratuit est suffisant.
-          La clé est enregistrée avec vos données familiales sur le serveur (comme les recettes).
+          Choisissez l'intelligence artificielle utilisée pour générer vos menus.
+          La clé API est enregistrée avec vos données familiales sur le serveur.
         </p>
-        <ol className="muted small" style={{ paddingLeft: "1.25rem" }}>
-          <li>Va sur Google AI Studio, menu "Get API key" : <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">ICI</a></li>
-          <li>Crée/copie la clé API.</li>
-          <li>Colle-la ci-dessous.</li>
-        </ol>
 
         <label className="field">
-          <span>Clé API</span>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Gemini API key"
-            autoComplete="off"
-          />
+          <span>IA active</span>
+          <select
+            value={activeLlm}
+            onChange={(e) => setActiveLlm(e.target.value)}
+          >
+            <option value="gemini">Google Gemini</option>
+            <option value="claude">Anthropic Claude</option>
+          </select>
         </label>
+
+        {activeLlm === "gemini" && (
+          <div style={{ marginTop: "1rem" }}>
+            <strong>Clé API Google Gemini</strong>
+            <ol className="muted small" style={{ paddingLeft: "1.25rem", margin: "0.4rem 0 0.75rem" }}>
+              <li>Va sur Google AI Studio, menu "Get API key" : <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">ICI</a></li>
+              <li>Crée/copie la clé API.</li>
+              <li>Colle-la ci-dessous.</li>
+            </ol>
+            <label className="field">
+              <span>Clé API Gemini</span>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="AIza..."
+                autoComplete="off"
+              />
+            </label>
+          </div>
+        )}
+
+        {activeLlm === "claude" && (
+          <div style={{ marginTop: "1rem" }}>
+            <strong>Clé API Anthropic Claude</strong>
+            <ol className="muted small" style={{ paddingLeft: "1.25rem", margin: "0.4rem 0 0.75rem" }}>
+              <li>Va sur <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>.</li>
+              <li>Crée un compte et ajoute des crédits.</li>
+              <li>Génère une clé API et colle-la ci-dessous.</li>
+            </ol>
+            <label className="field">
+              <span>Clé API Claude</span>
+              <input
+                type="password"
+                value={claudeApiKey}
+                onChange={(e) => setClaudeApiKey(e.target.value)}
+                placeholder="sk-ant-..."
+                autoComplete="off"
+              />
+            </label>
+          </div>
+        )}
       </section>
 
       <section className="card" style={{ marginTop: "1rem" }}>

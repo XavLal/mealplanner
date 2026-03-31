@@ -13,6 +13,8 @@ export function coerceAppState(raw: AppState): AppState {
   const partial = raw as AppState & {
     shopAisleOrder?: unknown;
     geminiApiKey?: unknown;
+    claudeApiKey?: unknown;
+    activeLlm?: unknown;
     familyContext?: unknown;
     tastesContext?: unknown;
     culinaryStyleContext?: unknown;
@@ -23,6 +25,8 @@ export function coerceAppState(raw: AppState): AppState {
     ...raw,
     shopAisleOrder: normalizeAisleOrder(partial.shopAisleOrder),
     geminiApiKey: typeof partial.geminiApiKey === "string" ? partial.geminiApiKey : "",
+    claudeApiKey: typeof partial.claudeApiKey === "string" ? partial.claudeApiKey : "",
+    activeLlm: partial.activeLlm === "claude" ? "claude" : "gemini",
     familyContext:
       typeof partial.familyContext === "string"
         ? partial.familyContext

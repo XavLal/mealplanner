@@ -45,6 +45,8 @@ export type AppState = {
   shopAisleOrder: string[];
   /** Clé API Gemini (partagée pour le tenant — fichier JSON sur le serveur) */
   geminiApiKey: string;
+  claudeApiKey: string;
+  activeLlm: string;
   familyContext: string;
   tastesContext: string;
   culinaryStyleContext: string;

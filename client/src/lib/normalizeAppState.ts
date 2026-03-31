@@ -13,6 +13,8 @@ export function normalizeAppState(raw: AppState): AppState {
   const p = raw as AppState & {
     shopAisleOrder?: unknown;
     geminiApiKey?: unknown;
+    claudeApiKey?: unknown;
+    activeLlm?: unknown;
     familyContext?: unknown;
     tastesContext?: unknown;
     culinaryStyleContext?: unknown;
@@ -23,6 +25,8 @@ export function normalizeAppState(raw: AppState): AppState {
     ...raw,
     shopAisleOrder: normalizeAisleOrder(p.shopAisleOrder),
     geminiApiKey: typeof p.geminiApiKey === "string" ? p.geminiApiKey : "",
+    claudeApiKey: typeof p.claudeApiKey === "string" ? p.claudeApiKey : "",
+    activeLlm: p.activeLlm === "claude" ? "claude" : "gemini",
     familyContext:
       typeof p.familyContext === "string" ? p.familyContext : DEFAULT_FAMILY_CONTEXT,
     tastesContext:

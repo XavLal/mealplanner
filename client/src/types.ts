@@ -43,6 +43,8 @@ export type AppState = {
   /** Ordre des rayons (liste de courses), synchronisé avec le serveur pour la famille */
   shopAisleOrder: string[];
   geminiApiKey: string;
+  claudeApiKey: string;
+  activeLlm: string;
   familyContext: string;
   tastesContext: string;
   culinaryStyleContext: string;
