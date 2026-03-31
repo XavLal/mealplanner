@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -19,6 +19,15 @@ export default function DashboardPage() {
   const [importBusy, setImportBusy] = useState(false);
   const [clearRecipesOpen, setClearRecipesOpen] = useState(false);
   const [clearRecipesBusy, setClearRecipesBusy] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualUrl, setManualUrl] = useState("");
+  const [manualPortions, setManualPortions] = useState("4");
+  const [manualPrepTime, setManualPrepTime] = useState("20");
+  const [manualCookingTime, setManualCookingTime] = useState("0");
+  const [manualIngredients, setManualIngredients] = useState("");
+  const [manualSteps, setManualSteps] = useState("");
 
   useEffect(() => {
     void hydrate();
@@ -85,6 +94,72 @@ export default function DashboardPage() {
     const ok = await clearAllRecipes();
     setClearRecipesBusy(false);
     if (ok) setClearRecipesOpen(false);
+  }
+
+  function resetManualForm() {
+    setManualTitle("");
+    setManualUrl("");
+    setManualPortions("4");
+    setManualPrepTime("20");
+    setManualCookingTime("0");
+    setManualIngredients("");
+    setManualSteps("");
+  }
+
+  async function submitManualRecipe(e: FormEvent) {
+    e.preventDefault();
+    if (!state) return;
+    const portions = Number(manualPortions);
+    const prep = Number(manualPrepTime);
+    const cook = Number(manualCookingTime);
+    const safePortions =
+      Number.isFinite(portions) && portions > 0 ? Math.min(Math.max(portions, 1), 24) : 4;
+    const safePrep = Number.isFinite(prep) && prep >= 0 ? prep : 0;
+    const safeCook = Number.isFinite(cook) && cook >= 0 ? cook : 0;
+
+    const ingredients = manualIngredients
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((name) => ({
+        name,
+        quantity: 1,
+        unit: "pièce",
+        aisle: "Divers",
+      }));
+
+    const steps = manualSteps
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    setManualBusy(true);
+    const ok = await commit((d) => {
+      const id = crypto.randomUUID();
+      d.recipes.push({
+        recipeInstanceId: id,
+        sourceRecipeId: `manual-${id}`,
+        weekId: null,
+        title: manualTitle.trim(),
+        source: "Maison",
+        url: manualUrl.trim() || null,
+        basePortions: safePortions,
+        prepTimeMinutes: safePrep,
+        cookingTimeMinutes: safeCook,
+        equipment: [],
+        tags: [],
+        isSpecialMeal: false,
+        alreadyCooked: false,
+        removedFromPlan: false,
+        ingredients,
+        steps: steps.length > 0 ? steps : ["Préparer la recette."],
+      });
+    });
+    setManualBusy(false);
+    if (ok) {
+      resetManualForm();
+      setManualOpen(false);
+    }
   }
 
   if (loading && !state) {
@@ -182,6 +257,16 @@ export default function DashboardPage() {
           </li>
         ))}
       </ul>
+
+      <div className="page-footer" style={{ marginTop: "1.5rem" }}>
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => setManualOpen(true)}
+        >
+          + Ajouter une recette manuellement
+        </button>
+      </div>
 
       <footer className="page-footer">
         <Separator className="mb-[1.25rem]" />
@@ -285,6 +370,115 @@ export default function DashboardPage() {
                 </button>
                 <button type="submit" className="btn primary" disabled={importBusy}>
                   {importBusy ? "Import…" : "Importer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {manualOpen ? (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="manual-recipe-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !manualBusy) {
+              setManualOpen(false);
+            }
+          }}
+        >
+          <div className="card modal" onClick={(e) => e.stopPropagation()}>
+            <h2 id="manual-recipe-title">Ajouter une recette manuellement</h2>
+            <form onSubmit={submitManualRecipe} className="dashboard-manual-recipe-form">
+              <div className="field-grid">
+                <label className="field">
+                  <span>Titre</span>
+                  <input
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label className="field">
+                  <span>URL</span>
+                  <input
+                    value={manualUrl}
+                    onChange={(e) => setManualUrl(e.target.value)}
+                    type="url"
+                    placeholder="https://… (optionnel)"
+                  />
+                </label>
+              </div>
+              <div className="field-grid">
+                <label className="field">
+                  <span>Portions</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={manualPortions}
+                    onChange={(e) => setManualPortions(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="field">
+                  <span>Temps de préparation (min)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={manualPrepTime}
+                    onChange={(e) => setManualPrepTime(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="field">
+                  <span>Temps de cuisson (min)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={manualCookingTime}
+                    onChange={(e) => setManualCookingTime(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+              <label className="field">
+                <span>Ingrédients</span>
+                <textarea
+                  rows={5}
+                  value={manualIngredients}
+                  onChange={(e) => setManualIngredients(e.target.value)}
+                  placeholder={"Une ligne par ingrédient, ex.:\n2 tomates\n200 g de pâtes"}
+                />
+                <p className="muted small">
+                  Les quantités/étagères pourront être affinées plus tard dans la liste de courses.
+                </p>
+              </label>
+              <label className="field">
+                <span>Étapes</span>
+                <textarea
+                  rows={6}
+                  value={manualSteps}
+                  onChange={(e) => setManualSteps(e.target.value)}
+                  placeholder={"Une ligne par étape, ex.:\nFaire chauffer le four…"}
+                />
+              </label>
+              <div className="row end">
+                <button
+                  type="button"
+                  className="btn ghost"
+                  disabled={manualBusy}
+                  onClick={() => {
+                    setManualOpen(false);
+                  }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn primary" disabled={manualBusy}>
+                  {manualBusy ? "Ajout…" : "Ajouter la recette"}
                 </button>
               </div>
             </form>
