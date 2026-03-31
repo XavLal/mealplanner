@@ -262,11 +262,7 @@ export default function DashboardPage() {
 
       {active.length === 0 ? (
         <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            margin: "2rem 0",
-          }}
+          className="flex justify-center items-center mb-[2rem] mt-[5rem]"
         >
           <Link
             to="/generateur-menus"
@@ -274,29 +270,32 @@ export default function DashboardPage() {
             style={{
               borderRadius: "999px",
               paddingInline: "2.5rem",
+              lineHeight: "2",
             }}
           >
-            Générer mon premier menu
+            🍔 Générer mes menus
           </Link>
         </div>
-      ) : null}
+      ) : null
+      }
 
       <div className="page-footer" style={{ marginTop: "1.5rem" }}>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={() => setManualOpen(true)}
-        >
-          + Ajouter une recette manuellement
-        </button>
+
       </div>
 
       <footer className="page-footer">
         <Separator className="mb-[1.25rem]" />
         <p className="muted small">
-          Importez des recettes depuis un JSON (IA). Les recettes sont ajoutées au plan et la liste
-          de courses est recalculée ; les lignes manuelles restent.
+          Ajoutez votre propre recette ou importez des recettes depuis un JSON formatté (IA).<br />
+          Les recettes sont ajoutées au plan et la liste de courses est recalculée ; les lignes manuelles restent.
         </p>
+        <button
+          type="button"
+          className="btn ghost mr-[0.5rem]"
+          onClick={() => setManualOpen(true)}
+        >
+          + Ajouter une recette manuellement
+        </button>
         <button
           type="button"
           className="btn primary mb-[1rem]"
@@ -328,186 +327,192 @@ export default function DashboardPage() {
         </button>
       </footer>
 
-      {clearRecipesOpen ? (
-        <div
-          className="modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="clear-recipes-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !clearRecipesBusy) setClearRecipesOpen(false);
-          }}
-        >
-          <div className="card modal" onClick={(e) => e.stopPropagation()}>
-            <h2 id="clear-recipes-title">Supprimer toutes les recettes ?</h2>
-            <p className="muted">
-              Toutes les recettes seront retirées du plan. La liste de courses sera mise à jour ;
-              les ingrédients saisis manuellement dans la liste seront conservés.
-            </p>
-            <div className="row end">
-              <button
-                type="button"
-                className="btn ghost"
-                disabled={clearRecipesBusy}
-                onClick={() => setClearRecipesOpen(false)}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                className="btn danger"
-                disabled={clearRecipesBusy}
-                onClick={() => void confirmClearAllRecipes()}
-              >
-                {clearRecipesBusy ? "Suppression…" : "Tout supprimer"}
-              </button>
+      {
+        clearRecipesOpen ? (
+          <div
+            className="modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clear-recipes-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !clearRecipesBusy) setClearRecipesOpen(false);
+            }}
+          >
+            <div className="card modal" onClick={(e) => e.stopPropagation()}>
+              <h2 id="clear-recipes-title">Supprimer toutes les recettes ?</h2>
+              <p className="muted">
+                Toutes les recettes seront retirées du plan. La liste de courses sera mise à jour ;
+                les ingrédients saisis manuellement dans la liste seront conservés.
+              </p>
+              <div className="row end">
+                <button
+                  type="button"
+                  className="btn ghost"
+                  disabled={clearRecipesBusy}
+                  onClick={() => setClearRecipesOpen(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={clearRecipesBusy}
+                  onClick={() => void confirmClearAllRecipes()}
+                >
+                  {clearRecipesBusy ? "Suppression…" : "Tout supprimer"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null
+      }
 
-      {importOpen ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="card modal">
-            <h2>Importer des recettes</h2>
-            <form onSubmit={onImport}>
-              <label className="field">
-                <span>Coller le JSON</span>
-                <textarea
-                  rows={12}
-                  value={importText}
-                  onChange={(e) => setImportText(e.target.value)}
-                  required
-                />
-              </label>
-              <div className="row end">
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => {
-                    setImportOpen(false);
-                    setImportText("");
-                  }}
-                >
-                  Annuler
-                </button>
-                <button type="submit" className="btn primary" disabled={importBusy}>
-                  {importBusy ? "Import…" : "Importer"}
-                </button>
-              </div>
-            </form>
+      {
+        importOpen ? (
+          <div className="modal-backdrop" role="dialog" aria-modal="true">
+            <div className="card modal">
+              <h2>Importer des recettes</h2>
+              <form onSubmit={onImport}>
+                <label className="field">
+                  <span>Coller le JSON</span>
+                  <textarea
+                    rows={12}
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    required
+                  />
+                </label>
+                <div className="row end">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      setImportOpen(false);
+                      setImportText("");
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn primary" disabled={importBusy}>
+                    {importBusy ? "Import…" : "Importer"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null
+      }
 
-      {manualOpen ? (
-        <div
-          className="modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="manual-recipe-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !manualBusy) {
-              setManualOpen(false);
-            }
-          }}
-        >
-          <div className="card modal" onClick={(e) => e.stopPropagation()}>
-            <h2 id="manual-recipe-title">Ajouter une recette manuellement</h2>
-            <form onSubmit={submitManualRecipe} className="dashboard-manual-recipe-form">
-              <div className="field-grid">
+      {
+        manualOpen ? (
+          <div
+            className="modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manual-recipe-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !manualBusy) {
+                setManualOpen(false);
+              }
+            }}
+          >
+            <div className="card modal" onClick={(e) => e.stopPropagation()}>
+              <h2 id="manual-recipe-title">Ajouter une recette manuellement</h2>
+              <form onSubmit={submitManualRecipe} className="dashboard-manual-recipe-form">
+                <div className="field-grid">
+                  <label className="field">
+                    <span>Titre</span>
+                    <input
+                      value={manualTitle}
+                      onChange={(e) => setManualTitle(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </label>
+                  <label className="field">
+                    <span>URL</span>
+                    <input
+                      value={manualUrl}
+                      onChange={(e) => setManualUrl(e.target.value)}
+                      type="url"
+                      placeholder="https://… (optionnel)"
+                    />
+                  </label>
+                </div>
+                <div className="field-grid">
+                  <label className="field">
+                    <span>Portions</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={manualPortions}
+                      onChange={(e) => setManualPortions(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Temps de préparation (min)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualPrepTime}
+                      onChange={(e) => setManualPrepTime(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Temps de cuisson (min)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualCookingTime}
+                      onChange={(e) => setManualCookingTime(e.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
                 <label className="field">
-                  <span>Titre</span>
-                  <input
-                    value={manualTitle}
-                    onChange={(e) => setManualTitle(e.target.value)}
-                    required
-                    autoFocus
+                  <span>Ingrédients</span>
+                  <textarea
+                    rows={5}
+                    value={manualIngredients}
+                    onChange={(e) => setManualIngredients(e.target.value)}
+                    placeholder={"Une ligne par ingrédient, ex.:\n2 tomates\n200 g de pâtes"}
                   />
+                  <p className="muted small">
+                    Les quantités/étagères pourront être affinées plus tard dans la liste de courses.
+                  </p>
                 </label>
                 <label className="field">
-                  <span>URL</span>
-                  <input
-                    value={manualUrl}
-                    onChange={(e) => setManualUrl(e.target.value)}
-                    type="url"
-                    placeholder="https://… (optionnel)"
+                  <span>Étapes</span>
+                  <textarea
+                    rows={6}
+                    value={manualSteps}
+                    onChange={(e) => setManualSteps(e.target.value)}
+                    placeholder={"Une ligne par étape, ex.:\nFaire chauffer le four…"}
                   />
                 </label>
-              </div>
-              <div className="field-grid">
-                <label className="field">
-                  <span>Portions</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={24}
-                    value={manualPortions}
-                    onChange={(e) => setManualPortions(e.target.value)}
-                    required
-                  />
-                </label>
-                <label className="field">
-                  <span>Temps de préparation (min)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={manualPrepTime}
-                    onChange={(e) => setManualPrepTime(e.target.value)}
-                    required
-                  />
-                </label>
-                <label className="field">
-                  <span>Temps de cuisson (min)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={manualCookingTime}
-                    onChange={(e) => setManualCookingTime(e.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-              <label className="field">
-                <span>Ingrédients</span>
-                <textarea
-                  rows={5}
-                  value={manualIngredients}
-                  onChange={(e) => setManualIngredients(e.target.value)}
-                  placeholder={"Une ligne par ingrédient, ex.:\n2 tomates\n200 g de pâtes"}
-                />
-                <p className="muted small">
-                  Les quantités/étagères pourront être affinées plus tard dans la liste de courses.
-                </p>
-              </label>
-              <label className="field">
-                <span>Étapes</span>
-                <textarea
-                  rows={6}
-                  value={manualSteps}
-                  onChange={(e) => setManualSteps(e.target.value)}
-                  placeholder={"Une ligne par étape, ex.:\nFaire chauffer le four…"}
-                />
-              </label>
-              <div className="row end">
-                <button
-                  type="button"
-                  className="btn ghost"
-                  disabled={manualBusy}
-                  onClick={() => {
-                    setManualOpen(false);
-                  }}
-                >
-                  Annuler
-                </button>
-                <button type="submit" className="btn primary" disabled={manualBusy}>
-                  {manualBusy ? "Ajout…" : "Ajouter la recette"}
-                </button>
-              </div>
-            </form>
+                <div className="row end">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    disabled={manualBusy}
+                    onClick={() => {
+                      setManualOpen(false);
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn primary" disabled={manualBusy}>
+                    {manualBusy ? "Ajout…" : "Ajouter la recette"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      ) : null}
-    </div>
+        ) : null
+      }
+    </div >
   );
 }
