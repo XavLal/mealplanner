@@ -4,6 +4,7 @@ import {
   DEFAULT_EQUIPMENT_CONTEXT,
   DEFAULT_FAMILY_CONTEXT,
   DEFAULT_TASTES_CONTEXT,
+  DEFAULT_INTERACTION_CONTEXT,
 } from "@/config/prompts.js";
 import { normalizeAisleOrder } from "@/lib/shopAisles";
 import { useAppStore } from "@/store/useAppStore";
@@ -24,7 +25,7 @@ export default function Settings() {
     DEFAULT_CULINARY_STYLE_CONTEXT
   );
   const [equipmentContext, setEquipmentContext] = useState(DEFAULT_EQUIPMENT_CONTEXT);
-  const [interactionContext, setInteractionContext] = useState("");
+  const [interactionContext, setInteractionContext] = useState(DEFAULT_INTERACTION_CONTEXT);
 
   const lastPushedVersionRef = useRef(null);
 
@@ -85,6 +86,7 @@ export default function Settings() {
     tastesContext,
     culinaryStyleContext,
     equipmentContext,
+    interactionContext,
     state,
     commit,
   ]);
@@ -123,14 +125,14 @@ export default function Settings() {
     setTastesContext(DEFAULT_TASTES_CONTEXT);
     setCulinaryStyleContext(DEFAULT_CULINARY_STYLE_CONTEXT);
     setEquipmentContext(DEFAULT_EQUIPMENT_CONTEXT);
-    setInteractionContext("");
+    setInteractionContext(DEFAULT_INTERACTION_CONTEXT);
     const ok = await commit((d) => {
       d.geminiApiKey = "";
       d.familyContext = DEFAULT_FAMILY_CONTEXT;
       d.tastesContext = DEFAULT_TASTES_CONTEXT;
       d.culinaryStyleContext = DEFAULT_CULINARY_STYLE_CONTEXT;
       d.equipmentContext = DEFAULT_EQUIPMENT_CONTEXT;
-      d.interactionContext = "";
+      d.interactionContext = DEFAULT_INTERACTION_CONTEXT;
     });
     showSavedToastIfOk(ok);
   }
@@ -322,6 +324,14 @@ export default function Settings() {
           <div>
             <div className="row" style={{ justifyContent: "space-between" }}>
               <strong>Interaction</strong>
+              <button
+                type="button"
+                className="btn ghost"
+                disabled={busy}
+                onClick={() => setInteractionContext(DEFAULT_INTERACTION_CONTEXT)}
+              >
+                Réinitialiser
+              </button>
             </div>
             <label className="field">
               <span>(ton, longueur des réponses, préférences d’échange)</span>
