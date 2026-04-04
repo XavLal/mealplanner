@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import {
@@ -116,6 +116,49 @@ function extractJsonPayload(text) {
   return null;
 }
 
+function IconRefresh() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  );
+}
+
+function IconImage() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+    </svg>
+  );
+}
+
 function fileToGenerativePart(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -165,6 +208,16 @@ export default function MenuGenerator() {
   const appError = useAppStore((s) => s.error);
 
   const textareaRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const initialReadIdxRef = useRef(0);
+  const didInitialScrollRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+
+  useEffect(() => {
+    didInitialScrollRef.current = false;
+    prevMessageCountRef.current = 0;
+  }, [chatStorageKey]);
 
   useEffect(() => {
     if (!state) void hydrate();
@@ -191,25 +244,65 @@ export default function MenuGenerator() {
   ]);
 
   useEffect(() => {
+    const readIdxKey = `${chatStorageKey}_read_idx`;
     const raw = localStorage.getItem(chatStorageKey);
+    let initialMessages;
     if (!raw) {
-      setMessages(defaultConversation());
-      setChatHydrated(true);
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const valid = parsed.filter(isValidChatMessage);
-        setMessages(valid.length > 0 ? valid : defaultConversation());
-      } else {
-        setMessages(defaultConversation());
+      initialMessages = defaultConversation();
+    } else {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(isValidChatMessage);
+          initialMessages = valid.length > 0 ? valid : defaultConversation();
+        } else {
+          initialMessages = defaultConversation();
+        }
+      } catch {
+        initialMessages = defaultConversation();
       }
-    } catch {
-      setMessages(defaultConversation());
     }
+    const readRaw = localStorage.getItem(readIdxKey);
+    initialReadIdxRef.current =
+      readRaw != null && readRaw !== "" && !Number.isNaN(Number(readRaw))
+        ? Number(readRaw)
+        : initialMessages.length - 1;
+    setMessages(initialMessages);
     setChatHydrated(true);
   }, [chatStorageKey]);
+
+  useLayoutEffect(() => {
+    if (!chatHydrated) return;
+    const scroller = chatScrollRef.current;
+    if (!scroller) return;
+
+    if (!didInitialScrollRef.current) {
+      didInitialScrollRef.current = true;
+      const lastRead = initialReadIdxRef.current;
+      const firstUnread = lastRead + 1;
+      if (firstUnread < messages.length) {
+        const node = scroller.querySelector(`[data-chat-msg="${firstUnread}"]`);
+        node?.scrollIntoView({ block: "start", behavior: "auto" });
+      } else {
+        scroller.scrollTop = scroller.scrollHeight;
+      }
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+
+    if (messages.length !== prevMessageCountRef.current || isLoading) {
+      prevMessageCountRef.current = messages.length;
+      scroller.scrollTop = scroller.scrollHeight;
+      try {
+        localStorage.setItem(
+          `${chatStorageKey}_read_idx`,
+          String(Math.max(0, messages.length - 1))
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [chatHydrated, messages, isLoading, chatStorageKey]);
 
   useEffect(() => {
     if (!chatHydrated) return;
@@ -235,10 +328,18 @@ export default function MenuGenerator() {
   }
 
   function startNewConversation() {
-    setMessages(defaultConversation());
+    const fresh = defaultConversation();
+    setMessages(fresh);
     setDraft("");
     setImportStatus(null);
     localStorage.removeItem(chatStorageKey);
+    localStorage.removeItem(`${chatStorageKey}_read_idx`);
+    initialReadIdxRef.current = Math.max(0, fresh.length - 1);
+    prevMessageCountRef.current = fresh.length;
+    requestAnimationFrame(() => {
+      const scroller = chatScrollRef.current;
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    });
   }
 
   async function handleSendMessage() {
@@ -384,29 +485,20 @@ export default function MenuGenerator() {
     }
   }
 
-  const llmBadge =
-    activeLlm === "claude"
-      ? { label: "Propulsé par Claude 🧠", color: "#f0e6ff", border: "#d8b4fe", text: "#5b21b6" }
-      : { label: "Propulsé par Gemini ⚡️", color: "#e8f5f1", border: "#cfeee4", text: "#0d5e4a" };
-
   return (
     <div className="menu-generator">
-      <div className="row" style={{ alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
-        <h1 style={{ margin: 0 }}>Générateur de Menus</h1>
-        <span
-          style={{
-            background: llmBadge.color,
-            border: `1px solid ${llmBadge.border}`,
-            color: llmBadge.text,
-            borderRadius: 20,
-            padding: "0.2rem 0.7rem",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-          }}
+      <div className="menu-generator-header">
+        <h1>Générateur de Menus</h1>
+        <button
+          type="button"
+          className="btn icon ghost"
+          disabled={isLoading}
+          onClick={startNewConversation}
+          title="Nouvelle conversation"
+          aria-label="Nouvelle conversation"
         >
-          {llmBadge.label}
-        </span>
+          <IconRefresh />
+        </button>
       </div>
       {!activeApiKey.trim() ? (
         <p
@@ -445,12 +537,13 @@ export default function MenuGenerator() {
       ) : null}
 
       <div className="card menu-generator-chat-card">
-        <div className="chat-messages">
+        <div className="chat-messages" ref={chatScrollRef}>
           {messages.map((msg, idx) => {
             const isUser = msg.role === "user";
             return (
               <div
                 key={`${msg.role}-${idx}`}
+                data-chat-msg={idx}
                 style={{
                   display: "flex",
                   justifyContent: isUser ? "flex-end" : "flex-start",
@@ -494,51 +587,21 @@ export default function MenuGenerator() {
           ) : null}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <div className="muted small">
-              {activeApiKey
-                ? `Clé API ${activeLlm === "claude" ? "Claude" : "Gemini"} détectée.`
-                : "Ajoute une clé API pour activer la génération."}
-            </div>
-            <div className="row" style={{ gap: "0.5rem" }}>
-              <button
-                type="button"
-                className="btn ghost"
-                disabled={isLoading}
-                onClick={startNewConversation}
-                title="Effacer l'historique et recommencer"
-              >
-                Nouvelle conversation
-              </button>
-              <label
-                className="btn ghost"
-                style={{ cursor: "pointer" }}
-                title="Joindre une image"
-              >
-                Joindre une image
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    setSelectedFile(f ?? null);
-                    setSelectedFileName(f ? f.name : null);
-                  }}
-                />
-              </label>
-            </div>
+        <div className="menu-generator-composer-meta">
+          <div className="muted small">
+            {activeApiKey
+              ? `Clé API ${activeLlm === "claude" ? "Claude" : "Gemini"} détectée.`
+              : "Ajoute une clé API pour activer la génération."}
           </div>
 
           {selectedFileName ? (
-            <div className="muted small" style={{ marginTop: "-0.2rem" }}>
+            <div className="muted small" style={{ marginTop: "-0.15rem" }}>
               Image : <strong>{selectedFileName}</strong>
             </div>
           ) : null}
 
-          <div style={{ display: "flex", gap: "0.6rem", alignItems: "flex-end" }}>
-            <label className="field" style={{ flex: 1, marginBottom: 0 }}>
+          <div className="menu-generator-composer-row">
+            <label className="field">
               <span className="sr-only">Message</span>
               <textarea
                 ref={textareaRef}
@@ -551,19 +614,44 @@ export default function MenuGenerator() {
                   resize: "none",
                   overflow: "hidden",
                   minHeight: 42,
-                  maxHeight: 180,
+                  maxHeight: 160,
                 }}
               />
             </label>
 
-            <button
-              type="button"
-              className="btn primary"
-              disabled={isLoading || (draft.trim().length === 0 && !selectedFile)}
-              onClick={() => void handleSendMessage()}
-            >
-              {isLoading ? "Envoi…" : "Envoyer"}
-            </button>
+            <div className="menu-generator-composer-actions">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setSelectedFile(f ?? null);
+                  setSelectedFileName(f ? f.name : null);
+                }}
+              />
+              <button
+                type="button"
+                className="btn icon ghost p-[10px] h-[42px]"
+                disabled={isLoading}
+                title="Joindre une image"
+                aria-label="Joindre une image"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <IconImage />
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={isLoading || (draft.trim().length === 0 && !selectedFile)}
+                onClick={() => void handleSendMessage()}
+              >
+                {isLoading ? "Envoi…" : "Envoyer"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -421,6 +421,54 @@ h2 {
   padding: 0.25rem 0.1rem;
 }
 
+.menu-generator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  margin-bottom: 0.35rem;
+}
+
+.menu-generator-header h1 {
+  margin: 0;
+  min-width: 0;
+  font-size: clamp(1.1rem, 4vw, 1.75rem);
+}
+
+.menu-generator-composer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.menu-generator-composer-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.menu-generator-composer-row .field {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.menu-generator-composer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .menu-generator-composer-meta .muted.small {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+}
+
 .recipe-card {
   background: var(--card);
   border: 1px solid var(--border);
