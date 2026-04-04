@@ -61,9 +61,7 @@ export default function RecipePage() {
       ? state.targetPortions[recipe.recipeInstanceId] ?? recipe.basePortions
       : 4;
   const [localPortions, setLocalPortions] = useState(baseTarget);
-  const flushPortionsTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(
-    null
-  );
+  const flushPortionsTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLocalPortions(baseTarget);
@@ -85,7 +83,8 @@ export default function RecipePage() {
     );
   }
 
-  const recipeId = recipe.recipeInstanceId;
+  const recipeSafe = recipe;
+  const recipeId = recipeSafe.recipeInstanceId;
 
   async function flushPortions(rawValue?: number) {
     const base = rawValue ?? localPortions;
@@ -122,20 +121,20 @@ export default function RecipePage() {
   }
 
   function openEditModal() {
-    setEditTitle(recipe.title);
-    setEditUrl(recipe.url ?? "");
-    setEditPortions(String(recipe.basePortions));
-    setEditPrepTime(String(recipe.prepTimeMinutes));
-    setEditCookingTime(String(recipe.cookingTimeMinutes));
+    setEditTitle(recipeSafe.title);
+    setEditUrl(recipeSafe.url ?? "");
+    setEditPortions(String(recipeSafe.basePortions));
+    setEditPrepTime(String(recipeSafe.prepTimeMinutes));
+    setEditCookingTime(String(recipeSafe.cookingTimeMinutes));
     setEditIngredients(
-      recipe.ingredients
+      recipeSafe.ingredients
         .map((i) => {
           const q = Number.isInteger(i.quantity) ? String(i.quantity) : String(i.quantity);
           return `${q} ${i.unit} ${i.name}`;
         })
         .join("\n")
     );
-    setEditSteps(recipe.steps.map((s) => `- ${s}`).join("\n"));
+    setEditSteps(recipeSafe.steps.map((s) => `- ${s}`).join("\n"));
     setEditOpen(true);
   }
 
@@ -224,7 +223,7 @@ export default function RecipePage() {
       string,
       { aisle: string; unit: string; name: string; quantity: number }
     >();
-    for (const ing of recipe.ingredients) {
+    for (const ing of recipeSafe.ingredients) {
       existingByName.set(normalizeName(ing.name), {
         aisle: ing.aisle,
         unit: ing.unit,
@@ -340,7 +339,7 @@ export default function RecipePage() {
   }
 
   const target =
-    state?.targetPortions[recipeId] ?? recipe.basePortions;
+    state?.targetPortions[recipeId] ?? recipeSafe.basePortions;
 
   return (
     <div>
@@ -348,20 +347,20 @@ export default function RecipePage() {
         <Link to="/">← Recettes</Link>
       </p>
       <header className="recipe-header">
-        <h1>{recipe.title}</h1>
+        <h1>{recipeSafe.title}</h1>
         <p className="muted">
-          {recipe.source}
+          {recipeSafe.source}
           <RecipeSourceLink
-            key={recipe.recipeInstanceId}
-            title={recipe.title}
-            source={recipe.source}
-            url={recipe.url}
+            key={recipeSafe.recipeInstanceId}
+            title={recipeSafe.title}
+            source={recipeSafe.source}
+            url={recipeSafe.url}
           />
         </p>
         <p className="muted small">
-          Temps de préparation : {recipe.prepTimeMinutes} min
-          {recipe.cookingTimeMinutes > 0
-            ? ` · Temps de cuisson : ${recipe.cookingTimeMinutes} min`
+          Temps de préparation : {recipeSafe.prepTimeMinutes} min
+          {recipeSafe.cookingTimeMinutes > 0
+            ? ` · Temps de cuisson : ${recipeSafe.cookingTimeMinutes} min`
             : ""}
         </p>
         <div className="row wrap">
@@ -394,7 +393,7 @@ export default function RecipePage() {
           <label className="check">
             <input
               type="checkbox"
-              checked={recipe.alreadyCooked}
+              checked={recipeSafe.alreadyCooked}
               onChange={(e) => void setCooked(e.target.checked)}
             />
             Déjà fait
@@ -424,13 +423,13 @@ export default function RecipePage() {
         <aside className="recipe-ingredients">
           <h2>Ingrédients</h2>
           <ul>
-            {recipe.ingredients.map((ing) => (
+            {recipeSafe.ingredients.map((ing) => (
               <li key={ing.name + ing.unit}>
                 <strong>
                   {scaledForRecipe(
                     ing.quantity,
                     ing.unit,
-                    recipe.basePortions,
+                    recipeSafe.basePortions,
                     target
                   )}{" "}
                   {ing.unit}
@@ -443,7 +442,7 @@ export default function RecipePage() {
         <section className="recipe-steps">
           <h2>Étapes</h2>
           <ol>
-            {recipe.steps.map((step, i) => (
+            {recipeSafe.steps.map((step, i) => (
               <li key={i}>{step}</li>
             ))}
           </ol>

@@ -1,6 +1,19 @@
 import { normalizeAppState } from "@/lib/normalizeAppState";
 import { normalizeAisleOrder } from "@/lib/shopAisles";
-import type { AppState } from "@/types";
+import type { AppState, StoredRecipe } from "@/types";
+
+/** Conserve les coches « déjà fait » / retiré du plan faites hors ligne ou en attente de sync. */
+function mergeRecipePlanFlags(
+  serverRecipes: StoredRecipe[],
+  localRecipes: StoredRecipe[]
+): StoredRecipe[] {
+  const localById = new Map(localRecipes.map((r) => [r.recipeInstanceId, r]));
+  return serverRecipes.map((sr) => {
+    const lr = localById.get(sr.recipeInstanceId);
+    if (!lr) return sr;
+    return { ...sr, alreadyCooked: lr.alreadyCooked, removedFromPlan: lr.removedFromPlan };
+  });
+}
 
 function clone<T>(x: T): T {
   return JSON.parse(JSON.stringify(x)) as T;
@@ -26,6 +39,7 @@ export function mergeServerWithLocalDraft(
   };
   return {
     ...server,
+    recipes: mergeRecipePlanFlags(server.recipes, local.recipes),
     shoppingLines: local.shoppingLines,
     targetPortions: { ...server.targetPortions, ...local.targetPortions },
     shopAisleOrder: normalizeAisleOrder(

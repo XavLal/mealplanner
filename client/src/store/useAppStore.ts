@@ -157,35 +157,45 @@ export const useAppStore = create<AppStore>((set, get) => ({
     updater(next);
     const normalized = normalizeAppState(next);
     const expectedVersion = cur.version;
+    normalized.version = expectedVersion;
     const online = typeof navigator !== "undefined" && navigator.onLine;
 
+    set({ state: normalized, pendingSync: true, error: null });
+    void persistCache(normalized, true);
+
     if (!online) {
-      normalized.version = cur.version;
-      set({ state: normalized, pendingSync: true, error: null });
-      void persistCache(normalized, true);
       return true;
     }
 
     try {
-      const res = await apiPutState(expectedVersion, normalized);
+      let res = await apiPutState(expectedVersion, normalized);
       if (res.ok) {
         const st = normalizeAppState(res.state);
         set({ state: st, pendingSync: false, error: null });
         void persistCache(st, false);
         return true;
       }
-      const conflict = normalizeAppState(res.conflict);
+      let server = normalizeAppState(res.conflict);
+      let merged = mergeServerWithLocalDraft(server, normalized);
+      set({ state: merged, error: res.message, pendingSync: true });
+      void persistCache(merged, true);
+      res = await apiPutState(server.version, merged);
+      if (res.ok) {
+        const st = normalizeAppState(res.state);
+        set({ state: st, pendingSync: false, error: null });
+        void persistCache(st, false);
+        return true;
+      }
+      server = normalizeAppState(res.conflict);
+      merged = mergeServerWithLocalDraft(server, get().state ?? merged);
       set({
-        state: conflict,
+        state: merged,
         error: res.message,
-        pendingSync: false,
+        pendingSync: true,
       });
-      void persistCache(conflict, false);
+      void persistCache(merged, true);
       return false;
     } catch {
-      normalized.version = cur.version;
-      set({ state: normalized, pendingSync: true, error: null });
-      void persistCache(normalized, true);
       return true;
     }
   },
